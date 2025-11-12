@@ -1,11 +1,11 @@
 # CasADiNLPModels
-This package provides support for loading `NLPModels` conforming NLPs from the compiled output of (CasADi)[https://github.com/casadi/casadi] code generation.
+This package provides support for loading `NLPModels` conforming NLPs from the compiled output of [CasADi](https://github.com/casadi/casadi) code generation.
 It also provides standalone loading of arbitrary (non-NLP) functions.
-For instruction on how to generate the necessary binaries, see the (CasADi documentation)[https://web.casadi.org/docs/#document-ccode].
+For instruction on how to generate the necessary binaries, see the [CasADi documentation](https://web.casadi.org/docs/#document-ccode).
 
 ## Usage
 As a prerequisite you need a compiled binary and a JSON data file, the formats of which you can find in the next section.
-To generate an NLP Model and solve it with, for example, (MadNLP)[https://github.com/MadNLP/MadNLP.jl] you can use:
+To generate an NLP Model and solve it with, for example, [MadNLP](https://github.com/MadNLP/MadNLP.jl) you can use:
 ```julia
 using CasADiNLPModels, MadNLP
 nlp = CasADiNLPModel('nlp.so', 'nlp.json')
