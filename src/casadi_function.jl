@@ -21,48 +21,54 @@ nnz(cs::CscSparsity) = cs.nnz
 #              and does not decompose them to concrete types when it can.
 #              In principle one could also specialize on number of args but this is
 #              perhaps not super useful as this can't be known at compile time anyway
-struct CasADiFunction
+mutable struct CasADiFunction
     lib::Ptr{Cvoid} # Library
-    name::Symbol
-    _incref::Ptr{Cvoid}
-    _decref::Ptr{Cvoid}
-    _n_in::Ptr{Cvoid}
-    _n_out::Ptr{Cvoid}
-    _name_in::Ptr{Cvoid}
-    _name_out::Ptr{Cvoid}
-    _sparsity_in::Ptr{Cvoid}
-    _sparsity_out::Ptr{Cvoid}
-    _checkout::Ptr{Cvoid}
-    _release::Ptr{Cvoid}
-    _alloc_mem::Ptr{Cvoid}
-    _init_mem::Ptr{Cvoid}
-    _free_mem::Ptr{Cvoid}
-    _work::Ptr{Cvoid}
-    _eval::Ptr{Cvoid}
+    const name::Symbol
+    const _incref::Ptr{Cvoid}
+    const _decref::Ptr{Cvoid}
+    const _n_in::Ptr{Cvoid}
+    const _n_out::Ptr{Cvoid}
+    const _name_in::Ptr{Cvoid}
+    const _name_out::Ptr{Cvoid}
+    const _sparsity_in::Ptr{Cvoid}
+    const _sparsity_out::Ptr{Cvoid}
+    const _checkout::Ptr{Cvoid}
+    const _release::Ptr{Cvoid}
+    const _alloc_mem::Ptr{Cvoid}
+    const _init_mem::Ptr{Cvoid}
+    const _free_mem::Ptr{Cvoid}
+    const _work::Ptr{Cvoid}
+    const _eval::Ptr{Cvoid}
 
-    arg_vec::Vector{
+    const arg_vec::Vector{
         Union{SparseMatrixCSC{Cdouble, Clong}, Matrix{Cdouble}, Vector{Cdouble}},
     }
-    res_vec::Vector{
+    const res_vec::Vector{
         Union{SparseMatrixCSC{Cdouble, Clong}, Matrix{Cdouble}, Vector{Cdouble}},
     }
-    iw_vec::Vector{Clong}
-    w_vec::Vector{Cdouble}
+    const iw_vec::Vector{Clong}
+    const w_vec::Vector{Cdouble}
 
-    arg_ptr_vec::Vector{Ptr{Cdouble}}
-    res_ptr_vec::Vector{Ptr{Cdouble}}
+    const arg_ptr_vec::Vector{Ptr{Cdouble}}
+    const res_ptr_vec::Vector{Ptr{Cdouble}}
 
-    sz_arg::Clong
-    sz_res::Clong
-    sz_iw::Clong
-    sz_w::Clong
-    n_in::Clong
-    n_out::Clong
+    const sz_arg::Clong
+    const sz_res::Clong
+    const sz_iw::Clong
+    const sz_w::Clong
+    const n_in::Clong
+    const n_out::Clong
 
-    in_sparsities::Vector{CasADiSparsity{Clong}}
-    out_sparsities::Vector{CasADiSparsity{Clong}}
+    const in_sparsities::Vector{CasADiSparsity{Clong}}
+    const out_sparsities::Vector{CasADiSparsity{Clong}}
+
+    function CasADiFunction(libpath::String, name::Symbol)
+        lib = checkout_lib(libpath)
+        return CasADiFunction(lib, name)
+    end
 
     function CasADiFunction(lib::Ptr{Cvoid}, name::Symbol)
+        inc_refcount(lib)
         _incref = Libdl.dlsym(lib, Symbol(name, :_incref))
         _decref = Libdl.dlsym(lib, Symbol(name, :_decref))
         _n_in = Libdl.dlsym(lib, Symbol(name, :_n_in))
@@ -216,6 +222,19 @@ struct CasADiFunction
             in_sparsities,
             out_sparsities,
         )
+        function free(cf::CasADiFunction)
+            if is_free(cf)
+                @error "Double free on CasADi Function."
+            end
+            _release = cf._release
+            _decref = cf._decref
+            @ccall $_release()::Cvoid
+            @ccall $_decref()::Cvoid
+            dec_refcount(cf.lib)
+            cf.lib = C_NULL
+        end
+
+        finalizer(free, casadi_fun)
 
         return casadi_fun
     end
@@ -256,7 +275,12 @@ function check_arg(fun::CasADiFunction, ii::Int, inarg::Any)
     return nothing
 end
 
+is_free(fun::CasADiFunction) = fun.lib == C_NULL
+
 function (fun::CasADiFunction)(args...)
+    if is_free(fun)
+        @error "Called free'd CasADi Function."
+    end
     # Check number of args
     if length(args) != fun.n_in
         error(
@@ -285,11 +309,4 @@ function (fun::CasADiFunction)(args...)
     end
 
     return fun.res_vec
-end
-
-function release(cf::CasADiFunction)
-    _release = cf._release
-    _decref = cf._decref
-    @ccall $_release()::Cvoid
-    @ccall $_decref()::Cvoid
 end

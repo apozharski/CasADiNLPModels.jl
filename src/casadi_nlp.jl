@@ -8,20 +8,24 @@ struct CasADiNLPData
     ubg::Vector{Cdouble}
 end
 
-struct CasADiNLPModel <: AbstractNLPModel{Cdouble, Vector{Cdouble}}
+mutable struct CasADiNLPModel <: AbstractNLPModel{Cdouble, Vector{Cdouble}}
     lib::Ptr{Cvoid}
-    f::CasADiFunction
-    grad_f::CasADiFunction
-    g::CasADiFunction
-    jac_g::CasADiFunction
-    hess_L::CasADiFunction
-    p::Vector{Cdouble}
-    np::Clong
-    meta::NLPModels.NLPModelMeta{Cdouble, Vector{Cdouble}}
-    counters::NLPModels.Counters
+    const f::CasADiFunction
+    const grad_f::CasADiFunction
+    const g::CasADiFunction
+    const jac_g::CasADiFunction
+    const hess_L::CasADiFunction
+    const p::Vector{Cdouble}
+    const np::Clong
+    const meta::NLPModels.NLPModelMeta{Cdouble, Vector{Cdouble}}
+    const counters::NLPModels.Counters
 
     function CasADiNLPModel(libpath::String, datapath::String)
-        lib = Libdl.dlopen(libpath)
+        if is_lib_loaded(libpath)
+            @warn "Loading NLP that is already loaded. Only the metadata will be different. If you want to load an updated NLP, make sure all referenes to CasADiNLPModels objects loading from the shared $(libpath) are unreachable."
+        end
+        lib = checkout_lib(libpath)
+        inc_refcount(lib)
         # f(x,p)->f
         f = CasADiFunction(lib, :nlp_f)
         # grad_f(x,p)->(f, grad_f)
@@ -66,15 +70,28 @@ struct CasADiNLPModel <: AbstractNLPModel{Cdouble, Vector{Cdouble}}
             meta,
             NLPModels.Counters(),
         )
+
+        function free(nlp::CasADiNLPModel)
+            if is_free(nlp)
+                @error "Double free on CasADi NLPModel."
+            end
+            dec_refcount(nlp.lib)
+            nlp.lib = C_NULL
+        end
+
+        finalizer(free, nlp)
         return nlp
     end
 end
+
+is_free(nlp::CasADiNLPModel) = nlp.lib == C_NULL
 
 # Implement only old interface/what we need for MadNLP
 # TODO(@anton) maybe if we release this separately we want to implement the full one
 #              if only to appease the JSO folks.
 
 function NLPModels.obj(nlp::CasADiNLPModel, x::AbstractVector{Cdouble})
+    @check_free nlp "Evaluating free'd CasADiNLPModel, this should never happen."
     @lencheck nlp.meta.nvar x
     (f,) = nlp.f(x, nlp.p)
     return f[1]
@@ -85,6 +102,7 @@ function NLPModels.grad!(
     x::AbstractVector{Cdouble},
     g::AbstractVector{Cdouble},
 )
+    @check_free nlp "Evaluating free'd CasADiNLPModel, this should never happen."
     @lencheck nlp.meta.nvar x
     @lencheck nlp.meta.nvar g
     (f, grad_f) = nlp.grad_f(x, nlp.p)
@@ -97,6 +115,7 @@ function NLPModels.cons!(
     x::AbstractVector{Cdouble},
     c::AbstractVector{Cdouble},
 )
+    @check_free nlp "Evaluating free'd CasADiNLPModel, this should never happen."
     @lencheck nlp.meta.nvar x
     @lencheck nlp.meta.ncon c
     (g,) = nlp.g(x, nlp.p)
@@ -109,6 +128,7 @@ function NLPModels.objgrad!(
     x::AbstractVector{Cdouble},
     g::AbstractVector{Cdouble},
 )
+    @check_free nlp "Evaluating free'd CasADiNLPModel, this should never happen."
     @lencheck nlp.meta.nvar x
     @lencheck nlp.meta.nvar g
     (f, grad_f) = nlp.grad_f(x, nlp.p)
@@ -178,6 +198,7 @@ function NLPModels.jac_structure!(
     rows::AbstractVector{Clong},
     cols::AbstractVector{Clong},
 )
+    @check_free nlp "Evaluating free'd CasADiNLPModel, this should never happen."
     @lencheck nlp.meta.nnzj rows cols
     fill_structure!(nlp.jac_g.res_vec[2], rows, cols)
     return rows, cols
@@ -188,6 +209,7 @@ function NLPModels.jac_coord!(
     x::AbstractVector{Cdouble},
     vals::AbstractVector{Cdouble},
 )
+    @check_free nlp "Evaluating free'd CasADiNLPModel, this should never happen."
     @lencheck nlp.meta.nnzj vals
     (g, jac_g) = nlp.jac_g(x, nlp.p)
     fill_coord!(jac_g, vals)
@@ -199,6 +221,7 @@ function NLPModels.hess_structure!(
     rows::AbstractVector{Clong},
     cols::AbstractVector{Clong},
 )
+    @check_free nlp "Evaluating free'd CasADiNLPModel, this should never happen."
     @lencheck nlp.meta.nnzh rows cols
     fill_structure!(nlp.hess_L.res_vec[1], rows, cols)
     return rows, cols
@@ -211,6 +234,7 @@ function NLPModels.hess_coord!(
     vals::AbstractVector{Cdouble};
     obj_weight=1.0,
 )
+    @check_free nlp "Evaluating free'd CasADiNLPModel, this should never happen."
     @lencheck nlp.meta.nnzh vals
     @lencheck nlp.meta.nvar x
     @lencheck nlp.meta.ncon y
