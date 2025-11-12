@@ -1,4 +1,6 @@
 # CasADiNLPModels
+[![CI](https://github.com/apozharski/CasADiNLPModels.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/apozharski/CasADiNLPModels.jl/actions/workflows/CI.yml)
+
 This package provides support for loading [`NLPModels`](https://github.com/JuliaSmoothOptimizers/NLPModels.jl) conforming NLPs from the compiled output of [CasADi](https://github.com/casadi/casadi) code generation.
 It also provides standalone loading of arbitrary (non-NLP) functions.
 For instruction on how to generate the necessary binaries, see the [CasADi documentation](https://web.casadi.org/docs/#document-ccode).
