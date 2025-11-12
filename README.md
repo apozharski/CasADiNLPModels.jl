@@ -19,6 +19,7 @@ Currently the `CasADiNLPModel` constructor expects the following function names 
 - `nlp_grad_f`: `(x,p)->(f(x;p), ∇f(x;p)`. Takes the optimization variables and parameters as arguments and returns the objective and its gradient.
 - `nlp_jac_g`: `(x,p)->(g(x;p), ∇g(x;p)`. Takes the optimization variables and parameters as arguments and returns the nonlinear constraints and their Jacobian.
 - `nlp_hess_l`: `(x,p,λf,λg)->(∇²L(x,λf,λg;p)`. Takes the optimization variables and parameters as arguments and returns the Hessian of the Lagrangian.
+
 The JSON file containing the data should contain:
 - `x0`: Initial point.
 - `y0`: Initial multipliers.
