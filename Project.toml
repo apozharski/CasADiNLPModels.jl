@@ -11,7 +11,7 @@ NLPModels = "a4795742-8479-5a88-8948-cc11e1c8c1a6"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
-JSON = "0"
+JSON = "0.21, 1"
 Libdl = "1.11.0"
 LinearAlgebra = "1.12.0"
 NLPModels = "0.21.5"
