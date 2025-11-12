@@ -2,11 +2,11 @@ const lib_refcount = Dict{Ptr{Nothing}, Tuple{String, Int}}()
 const lib_paths = Dict{String, Ptr{Nothing}}()
 
 macro check_free(obj, msg)
-    return quote
+    return esc(quote
         if is_free($obj)
             @error $msg
         end
-    end
+    end)
 end
 
 function is_lib_loaded(libpath::String)
