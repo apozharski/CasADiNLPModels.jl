@@ -1,0 +1,25 @@
+name = "CasADiNLPModels"
+uuid = "9e015429-ec9b-44ad-8386-499448c02825"
+version = "0.1.0"
+authors = ["Anton E. Pozharskiy <anton@pozhar.ski>"]
+
+[deps]
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+NLPModels = "a4795742-8479-5a88-8948-cc11e1c8c1a6"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+
+[compat]
+JSON = "0"
+Libdl = "1.11.0"
+LinearAlgebra = "1.12.0"
+NLPModels = "0.21.5"
+SparseArrays = "1.12.0"
+julia = "1.12"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
