@@ -1,6 +1,5 @@
 using CasADiNLPModels
 using Test
 
-@testset "CasADiNLPModels.jl" begin
-    # Write your tests here.
-end
+# TODO(@anton) add more tests as necessary
+include("lib_managment/refcount.jl")

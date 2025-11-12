@@ -11,18 +11,20 @@ end
 
 function is_lib_loaded(libpath::String)
     GC.gc() # Make sure any unreachable CasADiNLPModels objects are cleaned up
-    haskey(lib_paths, libpath)
+    abs_libpath = abspath(libpath)
+    haskey(lib_paths, abs_libpath)
 end
 
 function checkout_lib(libpath::String)
     GC.gc() # Make sure any unreachable CasADiNLPModels objects are cleaned up
-    if haskey(lib_paths, libpath)
-        lib = lib_paths[libpath]
+    abs_libpath = abspath(libpath)
+    if haskey(lib_paths, abs_libpath)
+        lib = lib_paths[abs_libpath]
         return lib
     else
         lib = Libdl.dlopen(libpath)
-        lib_refcount[lib] = (libpath, 0)
-        lib_paths[libpath] = lib
+        lib_refcount[lib] = (abs_libpath, 0)
+        lib_paths[abs_libpath] = lib
         return lib
     end
 end

@@ -1,0 +1,30 @@
+@testset "Test Refcounting logic" begin
+    @testset "basic refcount" begin
+        abs_so = abspath("nlp.so")
+        abs_json = abspath("nlp.json")
+        nlp = CasADiNLPModel(abs_so, "nlp.json")
+        nlp2 = CasADiNLPModel(abs_so, "nlp.json")
+        lib = nlp.lib
+        @test CasADiNLPModels.lib_refcount[lib][1] == abs_so
+        @test CasADiNLPModels.lib_refcount[lib][2] == 12
+
+        # Pretend to GC
+        finalize(nlp)
+        finalize(nlp.f)
+        finalize(nlp.grad_f)
+        finalize(nlp.g)
+        finalize(nlp.jac_g)
+        finalize(nlp.hess_L)
+        @test CasADiNLPModels.lib_refcount[lib][1] == abs_so
+        @test CasADiNLPModels.lib_refcount[lib][2] == 6
+
+        # Pretend to GC
+        finalize(nlp2)
+        finalize(nlp2.f)
+        finalize(nlp2.grad_f)
+        finalize(nlp2.g)
+        finalize(nlp2.jac_g)
+        finalize(nlp2.hess_L)
+        @test !haskey(CasADiNLPModels.lib_refcount, lib)
+    end
+end
