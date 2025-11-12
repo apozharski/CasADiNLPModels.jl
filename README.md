@@ -30,4 +30,4 @@ The JSON file containing the data should contain:
 
 ## Warnings
 As this package loads dynamic libraries, one can, if not careful, cause strange issues, or even segfault your `julia` process.
-We implement a refcounting scheme which does it's best to avoid allowing the user to shoot themselves in the foot by loading a library that has changed on disk but is already loaded by the `julia` process.
+We implement a refcounting scheme which does its best to avoid allowing the user to shoot themselves in the foot by loading a library that has changed on disk but is already loaded by the `julia` process.
