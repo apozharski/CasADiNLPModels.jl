@@ -13,13 +13,13 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 [compat]
 JSON = "0.21, 1"
 Libdl = "1.11.0"
-LinearAlgebra = "1.12.0"
+LinearAlgebra = "1.10.0"
 NLPModels = "0.21.5"
-SparseArrays = "1.12.0"
-julia = "1.12"
+SparseArrays = "1.10.0"
+julia = "1.10"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test"]
+test = ["Test", "NLPModels"]
