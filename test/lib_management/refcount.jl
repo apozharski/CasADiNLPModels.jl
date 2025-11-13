@@ -1,9 +1,9 @@
 @testset "Test Refcounting logic" begin
     @testset "basic refcount" begin
-        abs_so = abspath("nlp.so")
-        abs_json = abspath("nlp.json")
-        nlp = CasADiNLPModel(abs_so, "nlp.json")
-        nlp2 = CasADiNLPModel(abs_so, "nlp.json")
+        abs_so = abspath(joinpath(@__DIR__, "..", "nlp.so"))
+        abs_json = abspath(joinpath(@__DIR__, "..", "nlp.json"))
+        nlp = CasADiNLPModel(abs_so, abs_json)
+        nlp2 = CasADiNLPModel(abs_so, abs_json)
         lib = nlp.lib
         @test CasADiNLPModels.lib_refcount[lib][1] == abs_so
         @test CasADiNLPModels.lib_refcount[lib][2] == 12

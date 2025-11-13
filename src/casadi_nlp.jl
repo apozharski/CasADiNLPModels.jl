@@ -22,7 +22,7 @@ mutable struct CasADiNLPModel <: AbstractNLPModel{Cdouble, Vector{Cdouble}}
 
     function CasADiNLPModel(libpath::String, datapath::String)
         if is_lib_loaded(libpath)
-            @warn "Loading NLP that is already loaded. Only the metadata will be different. If you want to load an updated NLP, make sure all referenes to CasADiNLPModels objects loading from the shared $(libpath) are unreachable."
+            @warn "Loading NLP that is already loaded. Only the metadata will be different. If you want to load an updated NLP, make sure all references to CasADiNLPModels objects loading from the shared $(libpath) are unreachable."
         end
         lib = checkout_lib(libpath)
         inc_refcount(lib)
@@ -170,7 +170,8 @@ end
 
 function fill_coord!(S::SparseMatrixCSC, vals)
     count = 1
-    return vals .= S.nzval
+    vals .= S.nzval
+    return
 end
 
 function fill_coord!(S::Matrix, vals)

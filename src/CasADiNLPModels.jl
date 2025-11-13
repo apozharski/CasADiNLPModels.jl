@@ -4,7 +4,7 @@ using Libdl, SparseArrays, LinearAlgebra, JSON
 
 export CasADiFunction, CasADiNLPModel
 
-include("lib_managment.jl")
+include("lib_management.jl")
 include("casadi_function.jl")
 include("casadi_nlp.jl")
 
