@@ -12,7 +12,7 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
 JSON = "0.21, 1"
-Libdl = "1.11.0"
+Libdl = "1.10.0"
 LinearAlgebra = "1.10.0"
 NLPModels = "0.21.5"
 SparseArrays = "1.10.0"
