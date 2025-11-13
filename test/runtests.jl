@@ -4,7 +4,7 @@ using NLPModels
 using Test
 
 # TODO(@anton) add more tests as necessary
-# include("lib_management/refcount.jl")
+include("lib_management/refcount.jl")
 
 @testset "CasADiNLPModels API" begin
     abs_so = abspath(joinpath(@__DIR__, "nlp.so"))
