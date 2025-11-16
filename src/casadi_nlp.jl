@@ -8,19 +8,23 @@ struct CasADiNLPData
     ubg::Vector{Cdouble}
 end
 
-mutable struct CasADiNLPModel <: AbstractNLPModel{Cdouble, Vector{Cdouble}}
+mutable struct CasADiNLPModel{T<:Cdouble,VT<:AbstractVector{Cdouble}} <: AbstractNLPModel{T, VT}
     lib::Ptr{Cvoid}
     const f::CasADiFunction
     const grad_f::CasADiFunction
     const g::CasADiFunction
     const jac_g::CasADiFunction
     const hess_L::CasADiFunction
-    const p::Vector{Cdouble}
+    const p::VT
     const np::Clong
-    const meta::NLPModels.NLPModelMeta{Cdouble, Vector{Cdouble}}
+    const meta::NLPModels.NLPModelMeta{T, VT}
     const counters::NLPModels.Counters
 
     function CasADiNLPModel(libpath::String, datapath::String)
+        return CasADiNLPModel{Cdouble, Vector{Cdouble}}(libpath, datapath)
+    end
+  
+    function CasADiNLPModel{T,VT}(libpath::String, datapath::String) where {T,VT}
         if is_lib_loaded(libpath)
             @warn "Loading NLP that is already loaded. Only the metadata will be different. If you want to load an updated NLP, make sure all references to CasADiNLPModels objects loading from the shared $(libpath) are unreachable."
         end
@@ -196,9 +200,9 @@ end
 
 function NLPModels.jac_structure!(
     nlp::CasADiNLPModel,
-    rows::AbstractVector{Clong},
-    cols::AbstractVector{Clong},
-)
+    rows::AbstractVector{T},
+    cols::AbstractVector{T},
+) where {T<:Integer}
     @check_free nlp "Evaluating free'd CasADiNLPModel, this should never happen."
     @lencheck nlp.meta.nnzj rows cols
     fill_structure!(nlp.jac_g.res_vec[2], rows, cols)
@@ -219,9 +223,9 @@ end
 
 function NLPModels.hess_structure!(
     nlp::CasADiNLPModel,
-    rows::AbstractVector{Clong},
-    cols::AbstractVector{Clong},
-)
+    rows::AbstractVector{T},
+    cols::AbstractVector{T},
+) where {T<:Integer}
     @check_free nlp "Evaluating free'd CasADiNLPModel, this should never happen."
     @lencheck nlp.meta.nnzh rows cols
     fill_structure!(nlp.hess_L.res_vec[1], rows, cols)
