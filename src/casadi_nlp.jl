@@ -16,7 +16,7 @@ mutable struct CasADiNLPModel <: AbstractNLPModel{Cdouble, Vector{Cdouble}}
     const jac_g::CasADiFunction
     const hess_L::CasADiFunction
     const p::Vector{Cdouble}
-    const np::Clong
+    const np::Clonglong
     const meta::NLPModels.NLPModelMeta{Cdouble, Vector{Cdouble}}
     const counters::NLPModels.Counters
 
@@ -196,8 +196,8 @@ end
 
 function NLPModels.jac_structure!(
     nlp::CasADiNLPModel,
-    rows::AbstractVector{Clong},
-    cols::AbstractVector{Clong},
+    rows::AbstractVector{Clonglong},
+    cols::AbstractVector{Clonglong},
 )
     @check_free nlp "Evaluating free'd CasADiNLPModel, this should never happen."
     @lencheck nlp.meta.nnzj rows cols
@@ -219,8 +219,8 @@ end
 
 function NLPModels.hess_structure!(
     nlp::CasADiNLPModel,
-    rows::AbstractVector{Clong},
-    cols::AbstractVector{Clong},
+    rows::AbstractVector{Clonglong},
+    cols::AbstractVector{Clonglong},
 )
     @check_free nlp "Evaluating free'd CasADiNLPModel, this should never happen."
     @lencheck nlp.meta.nnzh rows cols

@@ -41,26 +41,26 @@ mutable struct CasADiFunction
     const _eval::Ptr{Cvoid}
 
     const arg_vec::Vector{
-        Union{SparseMatrixCSC{Cdouble, Clong}, Matrix{Cdouble}, Vector{Cdouble}},
+        Union{SparseMatrixCSC{Cdouble, Clonglong}, Matrix{Cdouble}, Vector{Cdouble}},
     }
     const res_vec::Vector{
-        Union{SparseMatrixCSC{Cdouble, Clong}, Matrix{Cdouble}, Vector{Cdouble}},
+        Union{SparseMatrixCSC{Cdouble, Clonglong}, Matrix{Cdouble}, Vector{Cdouble}},
     }
-    const iw_vec::Vector{Clong}
+    const iw_vec::Vector{Clonglong}
     const w_vec::Vector{Cdouble}
 
     const arg_ptr_vec::Vector{Ptr{Cdouble}}
     const res_ptr_vec::Vector{Ptr{Cdouble}}
 
-    const sz_arg::Clong
-    const sz_res::Clong
-    const sz_iw::Clong
-    const sz_w::Clong
-    const n_in::Clong
-    const n_out::Clong
+    const sz_arg::Clonglong
+    const sz_res::Clonglong
+    const sz_iw::Clonglong
+    const sz_w::Clonglong
+    const n_in::Clonglong
+    const n_out::Clonglong
 
-    const in_sparsities::Vector{CasADiSparsity{Clong}}
-    const out_sparsities::Vector{CasADiSparsity{Clong}}
+    const in_sparsities::Vector{CasADiSparsity{Clonglong}}
+    const out_sparsities::Vector{CasADiSparsity{Clonglong}}
 
     function CasADiFunction(libpath::String, name::Symbol)
         lib = checkout_lib(libpath)
@@ -86,34 +86,34 @@ mutable struct CasADiFunction
         _eval = Libdl.dlsym(lib, name)
 
         # get n_in and n_out
-        n_in = @ccall $_n_in()::Clong
-        n_out = @ccall $_n_out()::Clong
+        n_in = @ccall $_n_in()::Clonglong
+        n_out = @ccall $_n_out()::Clonglong
 
         # get work sizes
-        sz_arg = Vector{Clong}(undef, 1)
-        sz_res = Vector{Clong}(undef, 1)
-        sz_iw = Vector{Clong}(undef, 1)
-        sz_w = Vector{Clong}(undef, 1)
+        sz_arg = Vector{Clonglong}(undef, 1)
+        sz_res = Vector{Clonglong}(undef, 1)
+        sz_iw = Vector{Clonglong}(undef, 1)
+        sz_w = Vector{Clonglong}(undef, 1)
         err = @ccall $_work(
-            pointer(sz_arg)::Ptr{Clong},
-            pointer(sz_res)::Ptr{Clong},
-            pointer(sz_iw)::Ptr{Clong},
-            pointer(sz_w)::Ptr{Clong},
-        )::Clong
+            pointer(sz_arg)::Ptr{Clonglong},
+            pointer(sz_res)::Ptr{Clonglong},
+            pointer(sz_iw)::Ptr{Clonglong},
+            pointer(sz_w)::Ptr{Clonglong},
+        )::Clonglong
         if err != 0
             error("CasADi work failed")
         end
 
         arg_vec = Vector{
-            Union{SparseMatrixCSC{Cdouble, Clong}, Matrix{Cdouble}, Vector{Cdouble}},
+            Union{SparseMatrixCSC{Cdouble, Clonglong}, Matrix{Cdouble}, Vector{Cdouble}},
         }()
         arg_ptr_vec = Vector{Ptr{Cdouble}}()
 
         # get input sparsities
-        in_sparsities = Vector{CasADiSparsity{Clong}}()
-        for ii in Clong(0):(n_in-Clong(1))
-            sp_in = @ccall $_sparsity_in(ii::Clong)::Ptr{Clong}
-            sp_in_vec = unsafe_wrap(Vector{Clong}, sp_in, (3,))
+        in_sparsities = Vector{CasADiSparsity{Clonglong}}()
+        for ii in Clonglong(0):(n_in-Clonglong(1))
+            sp_in = @ccall $_sparsity_in(ii::Clonglong)::Ptr{Clonglong}
+            sp_in_vec = unsafe_wrap(Vector{Clonglong}, sp_in, (3,))
             nrow = sp_in_vec[1]
             ncol = sp_in_vec[2]
             dense = sp_in_vec[3]
@@ -126,30 +126,30 @@ mutable struct CasADiFunction
                 end
                 push!(arg_ptr_vec, pointer(arg_vec[end]))
             else
-                colind = Vector{Clong}(undef, ncol)
-                sp_in_vec = unsafe_wrap(Vector{Clong}, sp_in, (3+ncol,))
+                colind = Vector{Clonglong}(undef, ncol)
+                sp_in_vec = unsafe_wrap(Vector{Clonglong}, sp_in, (3+ncol,))
                 colind .= sp_in_vec[3:end] .+ 1
                 nnz_ = colind[end]-1
-                rows = Vector{Clong}(undef, nnz)
-                sp_in_vec = unsafe_wrap(Vector{Clong}, sp_in, (3+ncol+nnz_,))
+                rows = Vector{Clonglong}(undef, nnz)
+                sp_in_vec = unsafe_wrap(Vector{Clonglong}, sp_in, (3+ncol+nnz_,))
                 rows .= sp_in_vec[(4+ncol):end] .+ 1
                 push!(in_sparsities, CscSparsity(nrow, ncol, nnz_, colind, rows))
                 nzval = Vector{Cdouble}(undef, nnz_)
-                sparsein = SparseMatrixCSC{Cdouble, Clong}(nrow, ncol, colind, rows, nzval)
+                sparsein = SparseMatrixCSC{Cdouble, Clonglong}(nrow, ncol, colind, rows, nzval)
                 push!(arg_vec, sparsein)
                 push!(arg_ptr_vec, pointer(nzval))
             end
         end
 
         res_vec = Vector{
-            Union{SparseMatrixCSC{Cdouble, Clong}, Matrix{Cdouble}, Vector{Cdouble}},
+            Union{SparseMatrixCSC{Cdouble, Clonglong}, Matrix{Cdouble}, Vector{Cdouble}},
         }()
         res_ptr_vec = Vector{Ptr{Cdouble}}()
         # get output sparsities
-        out_sparsities = Vector{CasADiSparsity{Clong}}()
-        for ii in Clong(0):(n_out-Clong(1))
-            sp_out = @ccall $_sparsity_out(ii::Clong)::Ptr{Clong}
-            sp_out_vec = unsafe_wrap(Vector{Clong}, sp_out, (3,))
+        out_sparsities = Vector{CasADiSparsity{Clonglong}}()
+        for ii in Clonglong(0):(n_out-Clonglong(1))
+            sp_out = @ccall $_sparsity_out(ii::Clonglong)::Ptr{Clonglong}
+            sp_out_vec = unsafe_wrap(Vector{Clonglong}, sp_out, (3,))
             nrow = sp_out_vec[1]
             ncol = sp_out_vec[2]
             dense = sp_out_vec[3]
@@ -162,28 +162,28 @@ mutable struct CasADiFunction
                 end
                 push!(res_ptr_vec, pointer(res_vec[end]))
             else
-                colind = Vector{Clong}(undef, ncol+1)
-                sp_out_vec = unsafe_wrap(Vector{Clong}, sp_out, (3+ncol,))
+                colind = Vector{Clonglong}(undef, ncol+1)
+                sp_out_vec = unsafe_wrap(Vector{Clonglong}, sp_out, (3+ncol,))
                 colind .= sp_out_vec[3:end] .+ 1
                 nnz_ = colind[end] - 1
-                rows = Vector{Clong}(undef, nnz_)
-                sp_out_vec = unsafe_wrap(Vector{Clong}, sp_out, (3+ncol+nnz_,))
+                rows = Vector{Clonglong}(undef, nnz_)
+                sp_out_vec = unsafe_wrap(Vector{Clonglong}, sp_out, (3+ncol+nnz_,))
                 rows .= sp_out_vec[(4+ncol):end] .+ 1
                 push!(out_sparsities, CscSparsity(nrow, ncol, nnz_, colind, rows))
                 nzval = Vector{Cdouble}(undef, nnz_)
-                sparseout = SparseMatrixCSC{Cdouble, Clong}(nrow, ncol, colind, rows, nzval)
+                sparseout = SparseMatrixCSC{Cdouble, Clonglong}(nrow, ncol, colind, rows, nzval)
                 push!(res_vec, sparseout)
                 push!(res_ptr_vec, pointer(nzval))
             end
         end
 
         # allocate work vectors:
-        iw_vec = Vector{Clong}(undef, sz_iw[1])
+        iw_vec = Vector{Clonglong}(undef, sz_iw[1])
         w_vec = Vector{Cdouble}(undef, sz_w[1])
 
         # checkout a copy of the function and initialize the memory
         @ccall $_incref()::Cvoid
-        ret = @ccall $_checkout()::Clong
+        ret = @ccall $_checkout()::Clonglong
 
         if ret != 0
             error("failed to checkout memory")
@@ -300,9 +300,9 @@ function (fun::CasADiFunction)(args...)
     ret = @ccall $eval(
         pointer(fun.arg_ptr_vec)::Ptr{Ptr{Cdouble}},
         pointer(fun.res_ptr_vec)::Ptr{Ptr{Cdouble}},
-        pointer(fun.iw_vec)::Ptr{Clong},
+        pointer(fun.iw_vec)::Ptr{Clonglong},
         pointer(fun.w_vec)::Ptr{Cdouble},
-    )::Clong
+    )::Clonglong
 
     if ret != 0
         error("Error evaluating function $(fun.name)")
