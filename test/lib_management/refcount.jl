@@ -1,10 +1,10 @@
 @testset "Test Refcounting logic" begin
     @testset "basic refcount" begin
         # Absolute paths
-        abs_so = abspath(joinpath(@__DIR__, "..", "nlp.so"))
+        abs_so = abspath(joinpath(@__DIR__, "..", "nlp.$(dlext)"))
         abs_json = abspath(joinpath(@__DIR__, "..", "nlp.json"))
         # Relative paths
-        rel_so = joinpath(@__DIR__, "..", "nlp.so")
+        rel_so = joinpath(@__DIR__, "..", "nlp.$(dlext)")
         rel_json = joinpath(@__DIR__, "..", "nlp.json")
         nlp = CasADiNLPModel(abs_so, abs_json)
         nlp2 = CasADiNLPModel(rel_so, rel_json)
