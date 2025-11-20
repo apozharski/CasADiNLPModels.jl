@@ -2,12 +2,13 @@ using CasADiNLPModels
 using LinearAlgebra
 using NLPModels
 using Test
+using Libdl
 
 # TODO(@anton) add more tests as necessary
 include("lib_management/refcount.jl")
 
 @testset "CasADiNLPModels API" begin
-    abs_so = abspath(joinpath(@__DIR__, "nlp.so"))
+    abs_so = abspath(joinpath(@__DIR__, "nlp.$(dlext)"))
     abs_json = abspath(joinpath(@__DIR__, "nlp.json"))
     nlp = CasADiNLPModel(abs_so, abs_json)
     n, m = NLPModels.get_nvar(nlp), NLPModels.get_ncon(nlp)

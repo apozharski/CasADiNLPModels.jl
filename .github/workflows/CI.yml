@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-          os: [ubuntu-22.04]
+          os: [ubuntu-latest, windows-latest]
           julia-version: ['lts', '1']
           julia-arch: [x64]
     steps:
