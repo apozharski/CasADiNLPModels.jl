@@ -1,6 +1,6 @@
 name = "CasADiNLPModels"
 uuid = "9e015429-ec9b-44ad-8386-499448c02825"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Anton E. Pozharskiy <anton@pozhar.ski>"]
 
 [deps]
