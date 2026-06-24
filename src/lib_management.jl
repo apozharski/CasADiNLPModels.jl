@@ -37,7 +37,7 @@ function inc_refcount(lib::Ptr{Nothing})
         # increase the library refcount
         lib_refcount[lib] = (path, count)
     else
-        @warn "inc_refcount did nothing because the passed pointer is not in the refcount dictionary. This means something is extremely wrong."
+        ccall(:jl_safe_printf, Cvoid, (Cstring,), "inc_refcount did nothing because the passed pointer is not in the refcount dictionary. This means something is extremely wrong.")
     end
 end
 
@@ -58,6 +58,6 @@ function dec_refcount(lib::Ptr{Nothing})
             lib_refcount[lib] = (path, count)
         end
     else
-        @warn "dec_refcount did nothing because the passed pointer is not in the refcount dictionary. This means something is extremely wrong."
+        ccall(:jl_safe_printf, Cvoid, (Cstring,), "dec_refcount did nothing because the passed pointer is not in the refcount dictionary. This means something is extremely wrong.")
     end
 end
