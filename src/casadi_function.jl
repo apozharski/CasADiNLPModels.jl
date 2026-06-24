@@ -173,7 +173,7 @@ mutable struct CasADiFunction
                 nzval = Vector{Cdouble}(undef, nnz_)
                 sparseout = SparseMatrixCSC{Cdouble, Clonglong}(nrow, ncol, colind, rows, nzval)
                 push!(res_vec, sparseout)
-                res_ptr_vec[ii] = pointer(nzval)
+                res_ptr_vec[ii+1] = pointer(nzval)
             end
         end
 
