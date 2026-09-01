@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
           os: [ubuntu-latest, windows-latest]
-          julia-version: ['lts', '1']
+          julia-version: ['lts', '1', 'pre']
           julia-arch: [x64]
     steps:
       - uses: actions/checkout@v4
