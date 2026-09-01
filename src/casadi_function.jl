@@ -16,6 +16,9 @@ end
 nnz(cs::DenseSparsity) = cs.nrow*cs.ncol
 nnz(cs::CscSparsity) = cs.nnz
 
+nrow(cs::CasADiSparsity) = cs.nrow
+ncol(cs::CasADiSparsity) = cs.ncol
+
 # TODO(@anton) Make this generic on int and float types.
 #              This seems to be nontrivial because @ccall takes the typevars
 #              and does not decompose them to concrete types when it can.
@@ -34,9 +37,6 @@ mutable struct CasADiFunction
     const _sparsity_out::Ptr{Cvoid}
     const _checkout::Ptr{Cvoid}
     const _release::Ptr{Cvoid}
-    const _alloc_mem::Ptr{Cvoid}
-    const _init_mem::Ptr{Cvoid}
-    const _free_mem::Ptr{Cvoid}
     const _work::Ptr{Cvoid}
     const _eval::Ptr{Cvoid}
 
@@ -63,12 +63,16 @@ mutable struct CasADiFunction
     const out_sparsities::Vector{CasADiSparsity{Clonglong}}
 
     function CasADiFunction(libpath::String, name::Symbol)
+        # Create a mangled copy of the library unique to this CasADiFunction object
+        # and also increment the reference counter (due to the implicit dlopen).
         lib = checkout_lib(libpath)
-        return CasADiFunction(lib, name)
+        return CasADiFunction(lib, name, load=false)
     end
 
-    function CasADiFunction(lib::Ptr{Cvoid}, name::Symbol)
-        inc_refcount(lib)
+    function CasADiFunction(lib::Ptr{Cvoid}, name::Symbol, load::Bool=true)
+        # Increment the reference counter since we have library open already.
+        # Default to the sane (non-apple) flags.
+        load && dlopen(dlpath(lib), RTLD_LAZY|RTLD_DEEPBIND|RTLD_LOCAL)
         _incref = Libdl.dlsym(lib, Symbol(name, :_incref))
         _decref = Libdl.dlsym(lib, Symbol(name, :_decref))
         _n_in = Libdl.dlsym(lib, Symbol(name, :_n_in))
@@ -79,9 +83,6 @@ mutable struct CasADiFunction
         _sparsity_out = Libdl.dlsym(lib, Symbol(name, :_sparsity_out))
         _checkout = Libdl.dlsym(lib, Symbol(name, :_checkout))
         _release = Libdl.dlsym(lib, Symbol(name, :_release))
-        _alloc_mem = Libdl.dlsym(lib, Symbol(name, :_alloc_mem))
-        _init_mem = Libdl.dlsym(lib, Symbol(name, :_init_mem))
-        _free_mem = Libdl.dlsym(lib, Symbol(name, :_free_mem))
         _work = Libdl.dlsym(lib, Symbol(name, :_work))
         _eval = Libdl.dlsym(lib, name)
 
@@ -202,9 +203,6 @@ mutable struct CasADiFunction
             _sparsity_out,
             _checkout,
             _release,
-            _alloc_mem,
-            _init_mem,
-            _free_mem,
             _work,
             _eval,
             arg_vec,
@@ -230,14 +228,13 @@ mutable struct CasADiFunction
             _decref = cf._decref
             @ccall $_release()::Cvoid
             @ccall $_decref()::Cvoid
-            dec_refcount(cf.lib)
+            dlclose(cf.lib)
             cf.lib = C_NULL
         end
 
-        finalizer(free, casadi_fun)
-
-        return casadi_fun
+        return finalizer(free, casadi_fun)
     end
+
 end
 
 check_arg_type(arg::Any, inarg::Any) = false

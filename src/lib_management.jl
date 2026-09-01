@@ -1,5 +1,24 @@
-const lib_refcount = Dict{Ptr{Nothing}, Tuple{String, Int}}()
-const lib_paths = Dict{String, Ptr{Nothing}}()
+@static if VERSION >= v"1.12.0"
+    const LIB_DIRECTORY = Base.OncePerProcess{String}() do
+        # NOTE: This may throw if user can't create tmpdir. Oh well :)
+
+        return mktempdir(;prefix="casadinlpmodels_")
+    end
+
+    function get_libdirectory()
+        return LIB_DIRECTORY()
+    end
+else
+    const LIB_DIRECTORY = Ref{String}()
+
+    function __init__()
+        LIB_DIRECTORY[] = mktempdir(;prefix="casadinlpmodels_")
+    end
+
+    function get_libdirectory()
+        return LIB_DIRECTORY[]
+    end
+end
 
 macro check_free(obj, msg)
     return esc(quote
@@ -9,55 +28,23 @@ macro check_free(obj, msg)
     end)
 end
 
-function is_lib_loaded(libpath::String)
-    GC.gc() # Make sure any unreachable CasADiNLPModels objects are cleaned up
-    abs_libpath = abspath(libpath)
-    haskey(lib_paths, abs_libpath)
+function generate_copypath(fname::String)
+    randslug = randstring(10) # This is _probably_ enough!
+    name,ext = splitext(fname)
+
+    return joinpath(get_libdirectory(), name*"_"*randslug*ext)
 end
 
 function checkout_lib(libpath::String)
-    GC.gc() # Make sure any unreachable CasADiNLPModels objects are cleaned up
     abs_libpath = abspath(libpath)
-    if haskey(lib_paths, abs_libpath)
-        lib = lib_paths[abs_libpath]
-        return lib
-    else
-        lib = Libdl.dlopen(libpath)
-        lib_refcount[lib] = (abs_libpath, 0)
-        lib_paths[abs_libpath] = lib
-        return lib
+    fname = splitpath(abs_libpath)[end]
+    libcopypath = generate_copypath(fname)
+    while isfile(libcopypath) # make sure we ignore collisions
+        libcopypath = generate_copypath(fname)
     end
-end
 
-function inc_refcount(lib::Ptr{Nothing})
-    GC.gc() # Make sure any unreachable CasADiNLPModels objects are cleaned up
-    if haskey(lib_refcount, lib)
-        (path, count) = lib_refcount[lib]
-        count += 1
-        # increase the library refcount
-        lib_refcount[lib] = (path, count)
-    else
-        ccall(:jl_safe_printf, Cvoid, (Cstring,), "inc_refcount did nothing because the passed pointer is not in the refcount dictionary. This means something is extremely wrong.")
-    end
-end
+    cp(abs_libpath, libcopypath) # This may throw for various reasons. Oh  well :)
 
-function dec_refcount(lib::Ptr{Nothing})
-    GC.gc() # Make sure any unreachable CasADiNLPModels objects are cleaned up
-    if haskey(lib_refcount, lib)
-        (path, count) = lib_refcount[lib]
-        count -= 1
-        if count < 0
-            @error "CasADiNLPModels refcounter is in irrecoverable state. This should never happen, please contact the developers."
-        elseif count == 0
-            # Free the library
-            delete!(lib_refcount, lib)
-            delete!(lib_paths, path)
-            Libdl.dlclose(lib)
-        else
-            # Decrease the library refcount
-            lib_refcount[lib] = (path, count)
-        end
-    else
-        ccall(:jl_safe_printf, Cvoid, (Cstring,), "dec_refcount did nothing because the passed pointer is not in the refcount dictionary. This means something is extremely wrong.")
-    end
+    # Open the copy, and default to the sane (non-apple) flags.
+    return dlopen(libcopypath, RTLD_LAZY|RTLD_DEEPBIND|RTLD_LOCAL)
 end

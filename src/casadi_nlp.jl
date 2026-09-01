@@ -21,11 +21,7 @@ mutable struct CasADiNLPModel <: AbstractNLPModel{Cdouble, Vector{Cdouble}}
     const counters::NLPModels.Counters
 
     function CasADiNLPModel(libpath::String, datapath::String)
-        if is_lib_loaded(libpath)
-            @warn "Loading NLP that is already loaded. Only the metadata will be different. If you want to load an updated NLP, make sure all references to CasADiNLPModels objects loading from the shared $(libpath) are unreachable."
-        end
         lib = checkout_lib(libpath)
-        inc_refcount(lib)
         # f(x,p)->f
         f = CasADiFunction(lib, :nlp_f)
         # grad_f(x,p)->(f, grad_f)
@@ -75,7 +71,7 @@ mutable struct CasADiNLPModel <: AbstractNLPModel{Cdouble, Vector{Cdouble}}
             if is_free(nlp)
                 @error "Double free on CasADi NLPModel."
             end
-            dec_refcount(nlp.lib)
+            dlclose(nlp.lib)
             nlp.lib = C_NULL
         end
 
