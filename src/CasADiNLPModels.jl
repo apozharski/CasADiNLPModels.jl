@@ -1,6 +1,6 @@
 module CasADiNLPModels
 using NLPModels
-using Libdl, SparseArrays, LinearAlgebra, JSON
+using Libdl, SparseArrays, LinearAlgebra, JSON, Random
 
 export CasADiFunction, CasADiNLPModel
 
