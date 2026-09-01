@@ -1,7 +1,23 @@
-const libdirectory = Base.OncePerProcess{String}() do
-    # NOTE: This may throw if user can't create tmpdir. Oh well :)
+@static if VERSION >= v"1.12.0"
+    const libdirectory = Base.OncePerProcess{String}() do
+        # NOTE: This may throw if user can't create tmpdir. Oh well :)
 
-    return mktempdir(;prefix="casadinlpmodels_")
+        return mktempdir(;prefix="casadinlpmodels_")
+    end
+
+    function get_libdirectory()
+        return libdirectory()
+    end
+else
+    const libdirectory = Ref{String}()
+
+    function __init__()
+        libdirectory[] = mktempdir(;prefix="casadinlpmodels_")
+    end
+
+    function get_libdirectory()
+        return libdirectory[]
+    end
 end
 
 macro check_free(obj, msg)
@@ -16,7 +32,7 @@ function generate_copypath(fname::String)
     randslug = randstring(10) # This is _probably_ enough!
     name,ext = splitext(fname)
 
-    return joinpath(libdirectory(), name*"_"*randslug*ext)
+    return joinpath(get_libdirectory(), name*"_"*randslug*ext)
 end
 
 function checkout_lib(libpath::String)
