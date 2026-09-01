@@ -1,22 +1,22 @@
 @static if VERSION >= v"1.12.0"
-    const libdirectory = Base.OncePerProcess{String}() do
+    const LIB_DIRECTORY = Base.OncePerProcess{String}() do
         # NOTE: This may throw if user can't create tmpdir. Oh well :)
 
         return mktempdir(;prefix="casadinlpmodels_")
     end
 
     function get_libdirectory()
-        return libdirectory()
+        return LIB_DIRECTORY()
     end
 else
-    const libdirectory = Ref{String}()
+    const LIB_DIRECTORY = Ref{String}()
 
     function __init__()
-        libdirectory[] = mktempdir(;prefix="casadinlpmodels_")
+        LIB_DIRECTORY[] = mktempdir(;prefix="casadinlpmodels_")
     end
 
     function get_libdirectory()
-        return libdirectory[]
+        return LIB_DIRECTORY[]
     end
 end
 
