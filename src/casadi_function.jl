@@ -310,21 +310,13 @@ function (fun::CasADiFunction)(args...)
     return fun.res_vec
 end
 
-function eval!(fun::CasADiFunction, args::Vararg{<:AbstractArray{<:Real}})
+function eval!(fun::CasADiFunction)
     if is_free(fun)
         @error "Called free'd CasADi Function."
     end
 
     # Get eval fpointer
     eval = fun._eval
-
-    # Copy to arguments
-    @nospecialize
-    for (ii,arg) in enumerate(args)
-        check_arg(fun, ii, arg)
-        copyto!(fun.arg_vec[ii], arg)
-    end
-    @specialize
 
     ret = @ccall $eval(
         fun.arg_ptr_vec::Ptr{Ptr{Cdouble}},
