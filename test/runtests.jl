@@ -4,6 +4,9 @@ using NLPModels
 using Test
 using Libdl
 
+# TODO(@anton) add more tests as necessary
+include("lib_management.jl")
+
 @testset "CasADiNLPModels API" begin
     abs_so = abspath(joinpath(@__DIR__, "nlp.$(dlext)"))
     abs_json = abspath(joinpath(@__DIR__, "nlp.json"))
