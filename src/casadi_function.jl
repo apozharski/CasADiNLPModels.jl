@@ -13,6 +13,8 @@ struct DenseSparsity{T} <: CasADiSparsity{T}
     ncol::T
 end
 
+const CasADiType = Union{SparseMatrixCSC{Cdouble, Clonglong}, Matrix{Cdouble}, Vector{Cdouble}}
+
 nnz(cs::DenseSparsity) = cs.nrow*cs.ncol
 nnz(cs::CscSparsity) = cs.nnz
 
@@ -40,12 +42,8 @@ mutable struct CasADiFunction
     const _work::Ptr{Cvoid}
     const _eval::Ptr{Cvoid}
 
-    const arg_vec::Vector{
-        Union{SparseMatrixCSC{Cdouble, Clonglong}, Matrix{Cdouble}, Vector{Cdouble}},
-    }
-    const res_vec::Vector{
-        Union{SparseMatrixCSC{Cdouble, Clonglong}, Matrix{Cdouble}, Vector{Cdouble}},
-    }
+    const arg_vec::Vector{CasADiType}
+    const res_vec::Vector{CasADiType}
     const iw_vec::Vector{Clonglong}
     const w_vec::Vector{Cdouble}
 
@@ -274,6 +272,10 @@ end
 
 is_free(fun::CasADiFunction) = fun.lib == C_NULL
 
+copy_arg!(arg::T1, inarg::T2) where {T1 <: AbstractVector, T2 <: AbstractVector} = arg .= inarg
+copy_arg!(arg::T, inarg::T) where {T <: Matrix} = arg .= inarg
+copy_arg!(arg::T, inarg::T) where {T <: SparseMatrixCSC} = arg .= inarg
+
 function (fun::CasADiFunction)(args...)
     if is_free(fun)
         @error "Called free'd CasADi Function."
@@ -289,9 +291,9 @@ function (fun::CasADiFunction)(args...)
     eval = fun._eval
 
     # Copy to arguments
-    for ii in 1:fun.n_in
-        check_arg(fun, ii, args[ii])
-        fun.arg_vec[ii] .= args[ii]
+    for (ii,arg) in enumerate(args)
+        check_arg(fun, ii, arg)
+        copyto!(fun.arg_vec[ii], arg)
     end
 
 
@@ -306,4 +308,33 @@ function (fun::CasADiFunction)(args...)
     end
 
     return fun.res_vec
+end
+
+function eval!(fun::CasADiFunction, args::Vararg{<:AbstractArray{<:Real}})
+    if is_free(fun)
+        @error "Called free'd CasADi Function."
+    end
+
+    # Get eval fpointer
+    eval = fun._eval
+
+    # Copy to arguments
+    @nospecialize
+    for (ii,arg) in enumerate(args)
+        check_arg(fun, ii, arg)
+        copyto!(fun.arg_vec[ii], arg)
+    end
+    @specialize
+
+    ret = @ccall $eval(
+        fun.arg_ptr_vec::Ptr{Ptr{Cdouble}},
+        fun.res_ptr_vec::Ptr{Ptr{Cdouble}},
+        fun.iw_vec::Ptr{Clonglong},
+        fun.w_vec::Ptr{Cdouble},
+    )::Clonglong
+    if ret != 0
+        error("Error evaluating function $(fun.name)")
+    end
+
+    return nothing
 end
