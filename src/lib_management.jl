@@ -29,5 +29,6 @@ function checkout_lib(libpath::String)
 
     cp(abs_libpath, libcopypath) # This may throw for various reasons. Oh  well :)
 
-    return dlopen(libcopypath) # Open the copy
+    # Open the copy, and default to the sane (non-apple) flags.
+    return dlopen(libcopypath, RTLD_LAZY|RTLD_DEEPBIND|RTLD_LOCAL)
 end

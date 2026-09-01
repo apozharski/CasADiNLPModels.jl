@@ -71,7 +71,8 @@ mutable struct CasADiFunction
 
     function CasADiFunction(lib::Ptr{Cvoid}, name::Symbol, load::Bool=true)
         # Increment the reference counter since we have library open already.
-        load && dlopen(dlpath(lib))
+        # Default to the sane (non-apple) flags.
+        load && dlopen(dlpath(lib), RTLD_LAZY|RTLD_DEEPBIND|RTLD_LOCAL)
         _incref = Libdl.dlsym(lib, Symbol(name, :_incref))
         _decref = Libdl.dlsym(lib, Symbol(name, :_decref))
         _n_in = Libdl.dlsym(lib, Symbol(name, :_n_in))
