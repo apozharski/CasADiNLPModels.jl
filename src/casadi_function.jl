@@ -66,7 +66,7 @@ mutable struct CasADiFunction
         # Create a mangled copy of the library unique to this CasADiFunction object
         # and also increment the reference counter (due to the implicit dlopen).
         lib = checkout_lib(libpath)
-        return load_function(lib, name, load=false)
+        return CasADiFunction(lib, name, load=false)
     end
 
     function CasADiFunction(lib::Ptr{Cvoid}, name::Symbol, load::Bool=true)
